@@ -33,7 +33,10 @@ Route::get('/dashboard', function () {
 // ------------- ADMIN ROUTES -------------
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
+    Route::get('/admin/transactions', [AdminController::class, 'transactions'])->name('admin.transactions');
+    Route::post('/admin/fund-request/{id}/approve', [AdminController::class, 'approveRequest'])->name('admin.request.approve');
 });
+
 
 
 // ------------- AGENT ROUTES -------------

@@ -18,6 +18,26 @@
                 </div>
             </div>
 
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow border border-gray-100">
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Users</h4>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $totalUsers }}</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow border border-gray-100">
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total System Float</h4>
+                    <p class="text-3xl font-bold text-green-600 mt-2">৳ {{ number_format($totalSystemBalance, 2) }}</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow border border-gray-100">
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Transactions</h4>
+                    <p class="text-3xl font-bold text-blue-600 mt-2">{{ $totalTransactions }}</p>
+                </div>
+            </div>
+
+
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Pending Agent Float Requests</h3>
@@ -44,7 +64,12 @@
                                             ৳ {{ number_format($request->amount, 2) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="text-sm text-blue-600 font-semibold">Approval logic coming next...</span>
+                                            <form method="POST" action="{{ route('admin.request.approve', $request->id) }}">
+                                                @csrf
+                                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow">
+                                                    Approve Agent
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                 @endforeach
