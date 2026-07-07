@@ -3,6 +3,13 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AgentController;
+use App\Http\Controllers\CustomerController;
+
+
+
+
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -31,18 +38,23 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
 // ------------- AGENT ROUTES -------------
 Route::middleware(['auth', 'role:agent'])->group(function () {
-    Route::get('/agent/dashboard', function () {
-        return "Agent Dashboard Coming Soon";
-    })->name('agent.dashboard');
+    
+    Route::get('/agent/dashboard', [AgentController::class, 'index'])->name('agent.dashboard');
+    Route::post('/agent/request-funds', [AgentController::class, 'requestFunds'])->name('agent.request.funds');
+
 });
 
 
 // ------------- CUSTOMER ROUTES -------------
 Route::middleware(['auth', 'role:customer'])->group(function () {
-    Route::get('/customer/dashboard', function () {
-        return "Customer Dashboard Coming Soon";
-    })->name('customer.dashboard');
+    
+    Route::get('/customer/dashboard', [CustomerController::class, 'index'])->name('customer.dashboard');
+    
+    // The Send Money Action
+    Route::post('/customer/send-money', [CustomerController::class, 'sendMoney'])->name('customer.send.money');
+
 });
+
 
 
 // ------------- BREEZE PROFILE ROUTES -------------
