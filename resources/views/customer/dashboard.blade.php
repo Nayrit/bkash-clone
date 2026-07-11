@@ -203,14 +203,6 @@
                                     <span class="text-gray-600 font-medium">Principal Amount:</span>
                                     <span class="font-bold text-gray-900 text-base" x-text="selectedTxn ? '৳ ' + selectedTxn.amount : ''"></span>
                                 </div>
-                                <div class="flex justify-between items-center text-xs">
-                                    <span class="text-gray-500">Total Customer Fee:</span>
-                                    <span class="font-medium text-gray-700" x-text="selectedTxn ? '৳ ' + selectedTxn.fee : ''"></span>
-                                </div>
-                                <div class="flex justify-between items-center text-xs">
-                                    <span class="text-purple-700 font-semibold">Agent Commission Share:</span>
-                                    <span class="font-bold text-purple-700" x-text="selectedTxn ? '৳ ' + selectedTxn.commission : ''"></span>
-                                </div>
                             </div>
                         </div>
 
