@@ -84,12 +84,14 @@
             </div>
         </div>
 
-        <!-- Comprehensive Recent Transactions Table -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Detailed Transaction History</h3>
-            
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="{
+            selectedTxn: null,
+            openModal(txn) { this.selectedTxn = txn; },
+            closeModal() { this.selectedTxn = null; }
+        }">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Transaction History & Details</h3>
             @if($transactions->isEmpty())
-                <p class="text-gray-500 italic">No transactions yet.</p>
+                <p class="text-gray-500 italic text-sm">No transactions yet.</p>
             @else
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
@@ -106,7 +108,16 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($transactions as $txn)
-                                <tr class="hover:bg-gray-50">
+                                <tr @click="openModal({
+                                    id: '{{ $txn->txn_id }}',
+                                    date: '{{ $txn->created_at->format('d M Y, h:i:s A') }}',
+                                    type: '{{ ucwords(str_replace('_', ' ', $txn->type)) }}',
+                                    sender: '{{ $txn->sender->name ?? 'System' }} ({{ $txn->sender->phone ?? 'N/A' }})',
+                                    receiver: '{{ $txn->receiver->name ?? 'System' }} ({{ $txn->receiver->phone ?? 'N/A' }})',
+                                    amount: '{{ number_format($txn->amount, 2) }}',
+                                    fee: '{{ number_format($txn->fee ?? 0, 2) }}',
+                                    commission: '{{ number_format($txn->agent_commission ?? 0, 2) }}'
+                                })" class="hover:bg-pink-50 cursor-pointer transition">
                                     <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{{ $txn->created_at->format('d M Y, h:i:s A') }}</td>
                                     <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ $txn->txn_id }}</td>
                                     <td class="px-4 py-3">
@@ -139,6 +150,76 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+
+                <div x-show="selectedTxn !== null" 
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-95"
+                     class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+                     @click.self="closeModal()"
+                     style="display: none;">
+                    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 relative">
+                        <div class="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-pink-600">Transaction Details</span>
+                                <h4 class="text-lg font-bold text-gray-900 font-mono mt-0.5" x-text="selectedTxn ? selectedTxn.id : ''"></h4>
+                            </div>
+                            <button @click="closeModal()" class="text-gray-400 hover:text-gray-600 rounded-full p-2 hover:bg-gray-100 transition">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="space-y-4 text-sm">
+                            <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl">
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-400 uppercase">Timestamp</p>
+                                    <p class="font-medium text-gray-800 mt-1" x-text="selectedTxn ? selectedTxn.date : ''"></p>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-400 uppercase">Operation Type</p>
+                                    <p class="font-bold text-pink-700 mt-1" x-text="selectedTxn ? selectedTxn.type : ''"></p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 border border-gray-100 p-4 rounded-xl">
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-400 uppercase">Sender Account</p>
+                                    <p class="font-semibold text-gray-800 mt-1" x-text="selectedTxn ? selectedTxn.sender : ''"></p>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-400 uppercase">Receiver Account</p>
+                                    <p class="font-semibold text-gray-800 mt-1" x-text="selectedTxn ? selectedTxn.receiver : ''"></p>
+                                </div>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-xl space-y-2 border border-pink-100">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600 font-medium">Principal Amount:</span>
+                                    <span class="font-bold text-gray-900 text-base" x-text="selectedTxn ? '৳ ' + selectedTxn.amount : ''"></span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-gray-500">Total Customer Fee:</span>
+                                    <span class="font-medium text-gray-700" x-text="selectedTxn ? '৳ ' + selectedTxn.fee : ''"></span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-purple-700 font-semibold">Agent Commission Share:</span>
+                                    <span class="font-bold text-purple-700" x-text="selectedTxn ? '৳ ' + selectedTxn.commission : ''"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 pt-2">
+                            <button @click="closeModal()" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-2.5 px-4 rounded-xl transition">
+                                Close Details
+                            </button>
+                        </div>
+                    </div>
                 </div>
             @endif
         </div>

@@ -29,7 +29,7 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <!-- Customer Cash-In (Deposit) -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-t-4 border-green-500">
                 <h3 class="text-lg font-medium text-gray-900 mb-2">Customer Cash-In</h3>
@@ -78,22 +78,43 @@
                 </form>
             </div>
 
-            <!-- Return Float to Treasury (Cash Out) -->
+            <!-- Return Float to Treasury -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-t-4 border-purple-500">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Return Float to Treasury</h3>
-                <p class="text-xs text-gray-500 mb-4">Cash-out excess digital float back to Admin.</p>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Return Float</h3>
+                <p class="text-xs text-gray-500 mb-4">Return unused digital float back to Treasury.</p>
 
                 <form method="POST" action="{{ route('agent.cash.out') }}">
                     @csrf
                     <div class="mb-4">
-                        <x-input-label for="cash_out_amount_agent" :value="__('Amount (BDT)')" />
-                        <x-text-input id="cash_out_amount_agent" class="block mt-1 w-full" type="number" step="0.01" name="amount" min="500" required />
+                        <x-input-label for="return_amount" :value="__('Amount (BDT)')" />
+                        <x-text-input id="return_amount" class="block mt-1 w-full" type="number" step="0.01" name="amount" min="100" required />
                         <x-input-error :messages="$errors->get('amount')" class="mt-2" />
                     </div>
 
                     <div class="mt-4 pt-16">
                         <x-primary-button class="bg-purple-600 hover:bg-purple-700 w-full justify-center">
                             {{ __('Return Float') }}
+                        </x-primary-button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Remit Cash-In Collections to Admin -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-t-4 border-indigo-500">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Remit to Admin</h3>
+                <p class="text-xs text-gray-500 mb-4">Settle cash collection with Admin. Keep 1.5% commission.</p>
+
+                <form method="POST" action="{{ route('agent.remit.admin') }}">
+                    @csrf
+                    <div class="mb-4">
+                        <x-input-label for="remit_amount" :value="__('Amount (BDT)')" />
+                        <x-text-input id="remit_amount" class="block mt-1 w-full" type="number" step="0.01" name="amount" min="1" required placeholder="e.g. 5000" />
+                        <x-input-error :messages="$errors->get('amount')" class="mt-2" />
+                    </div>
+
+                    <div class="mt-4 pt-16">
+                        <x-primary-button class="bg-indigo-600 hover:bg-indigo-700 w-full justify-center">
+                            {{ __('Remit & Keep Commission') }}
                         </x-primary-button>
                     </div>
                 </form>
@@ -131,7 +152,11 @@
             </table>
         </div>
 
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="{
+            selectedTxn: null,
+            openModal(txn) { this.selectedTxn = txn; },
+            closeModal() { this.selectedTxn = null; }
+        }">
             <h3 class="text-lg font-medium text-gray-900 mb-4">Agent Ledger & Detailed Transactions</h3>
             @if($transactions->isEmpty())
                 <p class="text-gray-500 italic text-sm">No transactions yet.</p>
@@ -151,7 +176,17 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($transactions as $txn)
-                                <tr class="hover:bg-gray-50">
+                                <tr @click="openModal({
+                                    id: '{{ $txn->txn_id }}',
+                                    date: '{{ $txn->created_at->format('d M Y, h:i:s A') }}',
+                                    type: '{{ ucwords(str_replace('_', ' ', $txn->type)) }}',
+                                    sender: '{{ $txn->sender->name ?? 'System' }} ({{ $txn->sender->phone ?? 'N/A' }})',
+                                    receiver: '{{ $txn->receiver->name ?? 'System' }} ({{ $txn->receiver->phone ?? 'N/A' }})',
+                                    amount: '{{ number_format($txn->amount, 2) }}',
+                                    fee: '{{ number_format($txn->fee ?? 0, 2) }}',
+                                    commission: '{{ number_format($txn->agent_commission ?? 0, 2) }}',
+                                    admin_fee: '{{ number_format($txn->admin_fee ?? 0, 2) }}'
+                                })" class="hover:bg-blue-50 cursor-pointer transition">
                                     <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{{ $txn->created_at->format('d M Y, h:i:s A') }}</td>
                                     <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ $txn->txn_id }}</td>
                                     <td class="px-4 py-3">
@@ -172,18 +207,99 @@
                                         @endif
                                     </td>
                                     <td class="px-4 py-3 text-right font-medium">৳ {{ number_format($txn->amount, 2) }}</td>
-                                    <td class="px-4 py-3 text-right text-xs text-gray-500">৳ {{ number_format($txn->fee ?? 0, 2) }}</td>
+                                    <td class="px-4 py-3 text-right text-xs text-gray-500">
+                                        @if($txn->agent_commission > 0)
+                                            <span class="text-green-700 font-bold">+৳{{ number_format($txn->agent_commission, 2) }}</span>
+                                        @else
+                                            ৳ {{ number_format($txn->fee ?? 0, 2) }}
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-3 text-right font-bold">
                                         @if($txn->sender_id === $agent->id)
                                             <span class="text-red-600">- ৳ {{ number_format($txn->amount, 2) }}</span>
                                         @else
-                                            <span class="text-green-600">+ ৳ {{ number_format($txn->amount, 2) }}</span>
+                                            <span class="text-green-600">+ ৳ {{ number_format($txn->amount + ($txn->agent_commission ?? 0), 2) }}</span>
                                         @endif
                                     </td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+
+                <!-- POP-UP MODAL DIALOG -->
+                <div x-show="selectedTxn !== null" 
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-95"
+                     class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+                     @click.self="closeModal()"
+                     style="display: none;">
+                    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 relative">
+                        <div class="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Transaction Details</span>
+                                <h4 class="text-lg font-bold text-gray-900 font-mono mt-0.5" x-text="selectedTxn ? selectedTxn.id : ''"></h4>
+                            </div>
+                            <button @click="closeModal()" class="text-gray-400 hover:text-gray-600 rounded-full p-2 hover:bg-gray-100 transition">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="space-y-4 text-sm">
+                            <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl">
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-400 uppercase">Timestamp</p>
+                                    <p class="font-medium text-gray-800 mt-1" x-text="selectedTxn ? selectedTxn.date : ''"></p>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-400 uppercase">Operation Type</p>
+                                    <p class="font-bold text-indigo-700 mt-1" x-text="selectedTxn ? selectedTxn.type : ''"></p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 border border-gray-100 p-4 rounded-xl">
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-400 uppercase">Sender Account</p>
+                                    <p class="font-semibold text-gray-800 mt-1" x-text="selectedTxn ? selectedTxn.sender : ''"></p>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-400 uppercase">Receiver Account</p>
+                                    <p class="font-semibold text-gray-800 mt-1" x-text="selectedTxn ? selectedTxn.receiver : ''"></p>
+                                </div>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl space-y-2 border border-indigo-100">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600 font-medium">Principal Amount:</span>
+                                    <span class="font-bold text-gray-900 text-base" x-text="selectedTxn ? '৳ ' + selectedTxn.amount : ''"></span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-gray-500">Total Customer Fee:</span>
+                                    <span class="font-medium text-gray-700" x-text="selectedTxn ? '৳ ' + selectedTxn.fee : ''"></span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-green-700 font-semibold">Agent Commission Share:</span>
+                                    <span class="font-bold text-green-700" x-text="selectedTxn ? '৳ ' + selectedTxn.commission : ''"></span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs border-t border-indigo-200/60 pt-2">
+                                    <span class="text-indigo-700 font-semibold">Admin Treasury Share:</span>
+                                    <span class="font-bold text-indigo-700" x-text="selectedTxn ? '৳ ' + selectedTxn.admin_fee : ''"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 pt-2">
+                            <button @click="closeModal()" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-2.5 px-4 rounded-xl transition">
+                                Close Details
+                            </button>
+                        </div>
+                    </div>
                 </div>
             @endif
         </div>

@@ -70,36 +70,24 @@ class AgentController extends Controller
             $agentWallet = Wallet::where('user_id', $agent->id)->lockForUpdate()->firstOrFail();
             $customerWallet = Wallet::where('user_id', $customer->id)->lockForUpdate()->firstOrFail();
 
-            // State Mutation: Customer gets Amount; Agent does NOT lose amount, but earns Commission!
+            // Customer gets deposit amount; Agent gets cash amount + commission
             $customerWallet->increment('balance', $amount);
-            if ($commission > 0) {
-                $agentWallet->increment('balance', $commission);
-            }
+            $agentWallet->increment('balance', $amount + $commission);
 
-            // Primary Ledger Entry: Cash-In
+            // Single Ledger Entry containing complete information
             Transaction::create([
                 'txn_id' => uniqid('TXN_'),
                 'type' => 'cash_in',
                 'sender_id' => $agent->id,
                 'receiver_id' => $customer->id,
                 'amount' => $amount,
-                'fee' => 0.00
+                'fee' => 0.00,
+                'agent_commission' => $commission,
+                'admin_fee' => 0.00
             ]);
-
-            // Secondary Ledger Entry: Agent Cash-In Commission
-            if ($commission > 0) {
-                Transaction::create([
-                    'txn_id' => uniqid('TXN_'),
-                    'type' => 'commission',
-                    'sender_id' => $customer->id,
-                    'receiver_id' => $agent->id,
-                    'amount' => $commission,
-                    'fee' => 0.00
-                ]);
-            }
         });
 
-        return back()->with('status', "Cash-In of ৳{$amount} sent to Customer {$customer->name} ({$customer->phone})! Agent earned ৳{$commission} commission.");
+        return back()->with('status', "Cash-In of ৳{$amount} sent to Customer {$customer->name} ({$customer->phone})! Agent received ৳{$amount} deposit + ৳{$commission} commission.");
     }
 
     // 4. Process Agent Cash-Out (Return float back to Admin Treasury)
@@ -138,5 +126,43 @@ class AgentController extends Controller
         });
 
         return back()->with('status', "Float withdrawal of ৳{$amount} returned to Admin Treasury!");
+    }
+
+    // 5. Remit Cash-In Collections to Admin Treasury (Agent keeps commission, Admin gets remaining share)
+    public function remitToAdmin(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:1'
+        ]);
+
+        $agent = Auth::user();
+        $amount = round((float) $request->amount, 2);
+        $commissionRate = (float) \App\Models\SystemSetting::getVal('cash_in_commission_percentage', 1.50);
+        $commission = round($amount * ($commissionRate / 100), 2);
+        $adminShare = round($amount - $commission, 2);
+
+        DB::transaction(function () use ($agent, $amount, $commission, $adminShare) {
+            $agentWallet = Wallet::where('user_id', $agent->id)->lockForUpdate()->firstOrFail();
+            $treasuryWallet = Wallet::whereHas('user', fn ($q) => $q->where('role', 'admin'))->lockForUpdate()->firstOrFail();
+
+            // Admin Treasury receives the net collection share; Agent receives their earned commission
+            $treasuryWallet->increment('balance', $adminShare);
+            if ($commission > 0) {
+                $agentWallet->increment('balance', $commission);
+            }
+
+            Transaction::create([
+                'txn_id' => uniqid('TXN_'),
+                'type' => 'commission',
+                'sender_id' => $agent->id,
+                'receiver_id' => $treasuryWallet->user_id,
+                'amount' => $amount,
+                'fee' => 0.00,
+                'agent_commission' => $commission,
+                'admin_fee' => $adminShare
+            ]);
+        });
+
+        return back()->with('status', "Collection of ৳{$amount} settled! Admin Treasury received ৳{$adminShare} and you kept ৳{$commission} commission.");
     }
 }

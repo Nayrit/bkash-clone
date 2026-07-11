@@ -125,27 +125,17 @@ class CustomerController extends Controller
                 $treasuryWallet->increment('balance', $adminRevenue);
             }
 
-            // Primary Ledger Entry: Customer Cash-Out
+            // Single Ledger Entry containing complete breakdown
             Transaction::create([
                 'txn_id' => uniqid('TXN_'),
                 'type' => 'cash_out',
                 'sender_id' => $customer->id,
                 'receiver_id' => $agent->id,
                 'amount' => $amount,
-                'fee' => $fee
+                'fee' => $fee,
+                'agent_commission' => $agentCommission,
+                'admin_fee' => $adminRevenue
             ]);
-
-            // Secondary Ledger Entry: Agent Commission Receipt
-            if ($agentCommission > 0) {
-                Transaction::create([
-                    'txn_id' => uniqid('TXN_'),
-                    'type' => 'commission',
-                    'sender_id' => $treasuryWallet ? $treasuryWallet->user_id : $customer->id,
-                    'receiver_id' => $agent->id,
-                    'amount' => $agentCommission,
-                    'fee' => 0.00
-                ]);
-            }
         });
 
         return back()->with('status', "Cash-Out of ৳{$amount} completed! Total Fee: ৳{$fee} (Agent Commission: ৳{$agentCommission}).");

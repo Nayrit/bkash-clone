@@ -84,11 +84,15 @@
             </div>
 
             <!-- Global System Ledger & Audit Table -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg" x-data="{
+                selectedTxn: null,
+                openModal(txn) { this.selectedTxn = txn; },
+                closeModal() { this.selectedTxn = null; }
+            }">
                 <div class="p-6 text-gray-900">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Global System Ledger & Audit Log</h3>
                     @if($recentTransactions->isEmpty())
-                        <p class="text-gray-500 italic">No transactions recorded across the system yet.</p>
+                        <p class="text-gray-500 italic text-sm">No transactions recorded across the system yet.</p>
                     @else
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200 text-sm">
@@ -105,7 +109,17 @@
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach($recentTransactions as $txn)
-                                        <tr class="hover:bg-gray-50">
+                                        <tr @click="openModal({
+                                            id: '{{ $txn->txn_id }}',
+                                            date: '{{ $txn->created_at->format('d M Y, h:i:s A') }}',
+                                            type: '{{ ucwords(str_replace('_', ' ', $txn->type)) }}',
+                                            sender: '{{ $txn->sender->name ?? 'System' }} ({{ $txn->sender->phone ?? 'N/A' }})',
+                                            receiver: '{{ $txn->receiver->name ?? 'System' }} ({{ $txn->receiver->phone ?? 'N/A' }})',
+                                            amount: '{{ number_format($txn->amount, 2) }}',
+                                            fee: '{{ number_format($txn->fee ?? 0, 2) }}',
+                                            commission: '{{ number_format($txn->agent_commission ?? 0, 2) }}',
+                                            admin_fee: '{{ number_format($txn->admin_fee ?? 0, 2) }}'
+                                        })" class="hover:bg-green-50 cursor-pointer transition">
                                             <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{{ $txn->created_at->format('d M Y, h:i:s A') }}</td>
                                             <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ $txn->txn_id }}</td>
                                             <td class="px-4 py-3">
@@ -129,6 +143,30 @@
                                             </td>
                                             <td class="px-4 py-3 text-right font-medium">৳ {{ number_format($txn->amount, 2) }}</td>
                                             <td class="px-4 py-3 text-right text-xs text-gray-500">৳ {{ number_format($txn->fee ?? 0, 2) }}</td>
+                                        </tr>
+                                                    <div>
+                                                        <p class="font-semibold text-gray-500 uppercase">Sender Details</p>
+                                                        <p class="mt-0.5">{{ $txn->sender->name ?? 'System' }} ({{ $txn->sender->phone ?? 'N/A' }})</p>
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-semibold text-gray-500 uppercase">Receiver Details</p>
+                                                        <p class="mt-0.5">{{ $txn->receiver->name ?? 'System' }} ({{ $txn->receiver->phone ?? 'N/A' }})</p>
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-semibold text-gray-500 uppercase">Treasury Audit Breakdown</p>
+                                                        <p class="mt-0.5">Principal: ৳{{ number_format($txn->amount, 2) }}</p>
+                                                        @if($txn->fee > 0)
+                                                            <p class="text-gray-600">Total Customer Fee: ৳{{ number_format($txn->fee, 2) }}</p>
+                                                        @endif
+                                                        @if($txn->agent_commission > 0)
+                                                            <p class="text-purple-700 font-medium">Agent Commission: ৳{{ number_format($txn->agent_commission, 2) }}</p>
+                                                        @endif
+                                                        @if($txn->admin_fee > 0)
+                                                            <p class="text-green-700 font-bold">Admin Revenue: ৳{{ number_format($txn->admin_fee, 2) }}</p>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>

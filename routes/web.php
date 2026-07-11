@@ -45,6 +45,7 @@ Route::middleware(['auth', 'role:agent'])->group(function () {
     Route::post('/agent/request-funds', [AgentController::class, 'requestFunds'])->name('agent.request.funds');
     Route::post('/agent/cash-in', [AgentController::class, 'cashIn'])->name('agent.cash.in');
     Route::post('/agent/cash-out', [AgentController::class, 'cashOut'])->name('agent.cash.out');
+    Route::post('/agent/remit-admin', [AgentController::class, 'remitToAdmin'])->name('agent.remit.admin');
 });
 
 
