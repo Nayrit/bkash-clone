@@ -41,22 +41,20 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
 // ------------- AGENT ROUTES -------------
 Route::middleware(['auth', 'role:agent'])->group(function () {
-    
     Route::get('/agent/dashboard', [AgentController::class, 'index'])->name('agent.dashboard');
     Route::post('/agent/request-funds', [AgentController::class, 'requestFunds'])->name('agent.request.funds');
-
+    Route::post('/agent/cash-in', [AgentController::class, 'cashIn'])->name('agent.cash.in');
+    Route::post('/agent/cash-out', [AgentController::class, 'cashOut'])->name('agent.cash.out');
 });
 
 
 // ------------- CUSTOMER ROUTES -------------
 Route::middleware(['auth', 'role:customer'])->group(function () {
-    
     Route::get('/customer/dashboard', [CustomerController::class, 'index'])->name('customer.dashboard');
-    
-    // The Send Money Action
     Route::post('/customer/send-money', [CustomerController::class, 'sendMoney'])->name('customer.send.money');
-
+    Route::post('/customer/cash-out', [CustomerController::class, 'cashOut'])->name('customer.cash.out');
 });
+
 
 
 

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->string('txn_id')->unique(); // Unique transaction hash visible to users
-            $table->enum('type', ['send_money', 'cash_in', 'cash_out', 'funding', 'commission']);
+            $table->enum('type', ['send_money', 'cash_in', 'cash_out', 'funding', 'commission', 'system_float']);
             
             // Explicitly naming the foreign keys pointing back to the users table
             $table->foreignId('sender_id')->constrained('users');

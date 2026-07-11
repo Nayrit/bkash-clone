@@ -23,5 +23,12 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
             'role' => 'admin',
         ]);
+
+        \App\Models\SystemSetting::setVal('cash_out_fee_percentage', '2.00'); // 20 Tk per 1000
+        \App\Models\SystemSetting::setVal('agent_commission_percentage', '1.50'); // 15 Tk per 1000
+        \App\Models\SystemSetting::setVal('admin_fee_percentage', '0.50'); // 5 Tk per 1000
+        \App\Models\SystemSetting::setVal('cash_in_commission_percentage', '1.50'); // 15 Tk per 1000 Cash-In Commission
     }
 }
+
+
