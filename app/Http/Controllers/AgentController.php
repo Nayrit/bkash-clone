@@ -63,23 +63,23 @@ class AgentController extends Controller
         }
 
         $amount = round((float) $request->amount, 2);
-        $commissionRate = (float) \App\Models\SystemSetting::getVal('cash_in_commission_percentage', 1.50);
-        $commission = round($amount * ($commissionRate / 100), 2); // 15 Tk per 1000
 
-        DB::transaction(function () use ($agent, $customer, $amount, $commission) {
+        DB::transaction(function () use ($agent, $customer, $amount) {
             $agentWallet = Wallet::where('user_id', $agent->id)->lockForUpdate()->firstOrFail();
             $customerWallet = Wallet::where('user_id', $customer->id)->lockForUpdate()->firstOrFail();
 
-            // Customer gets deposit amount; Agent earns commission & tracks collected physical cash + dues to Admin
-            $adminShare = round($amount - $commission, 2);
-            $customerWallet->increment('balance', $amount);
-            $agentWallet->increment('cash_in_hand', $amount);
-            $agentWallet->increment('admin_due', $adminShare);
-            if ($commission > 0) {
-                $agentWallet->increment('balance', $commission);
+            if ($agentWallet->balance < $amount) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'amount' => "Insufficient digital float balance (৳{$agentWallet->balance}). Request float from Treasury first."
+                ]);
             }
 
-            // Single Ledger Entry containing complete information
+            // Customer gets deposit amount; Agent digital float decreases; Agent physical cash increases
+            $agentWallet->decrement('balance', $amount);
+            $customerWallet->increment('balance', $amount);
+            $agentWallet->increment('cash_in_hand', $amount);
+
+            // Single Ledger Entry with 0 commission & 0 fee
             Transaction::create([
                 'txn_id' => uniqid('TXN_'),
                 'type' => 'cash_in',
@@ -87,12 +87,12 @@ class AgentController extends Controller
                 'receiver_id' => $customer->id,
                 'amount' => $amount,
                 'fee' => 0.00,
-                'agent_commission' => $commission,
+                'agent_commission' => 0.00,
                 'admin_fee' => 0.00
             ]);
         });
 
-        return back()->with('status', "Cash-In of ৳{$amount} sent to Customer {$customer->name} ({$customer->phone})! Agent received ৳{$amount} deposit + ৳{$commission} commission.");
+        return back()->with('status', "Cash-In of ৳{$amount} sent to Customer {$customer->name} ({$customer->phone})! Collected ৳{$amount} physical cash.");
     }
 
     // 4. Process Agent Cash-Out (Return float back to Admin Treasury)

@@ -31,8 +31,9 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Send Money Card -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Send Money (P2P)</h3>
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-t-4 border-pink-500">
+                <h3 class="text-lg font-medium text-gray-900 mb-1">Send Money (P2P)</h3>
+                <p class="text-xs text-gray-500 mb-4">Fee: Flat ৳ 5.00 per transfer (goes directly to Admin)</p>
 
                 <form method="POST" action="{{ route('customer.send.money') }}">
                     @csrf

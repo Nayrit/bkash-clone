@@ -43,9 +43,10 @@ class AdminController extends Controller
         // Uses a Transaction to ensure money is moved safely or not at all
         DB::transaction(function () use ($fundRequest, $admin, $agent) {
             
-            // Move the Money
+            // Move the Money & track Agent due to Admin
             $admin->wallet->decrement('balance', $fundRequest->amount);
             $agent->wallet->increment('balance', $fundRequest->amount);
+            $agent->wallet->increment('admin_due', $fundRequest->amount);
 
             // Log the transaction
             Transaction::create([

@@ -50,7 +50,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-t-4 border-green-500 flex flex-col justify-between">
                 <div>
                     <h3 class="text-lg font-medium text-gray-900 mb-2">Perform Cash-In</h3>
-                    <p class="text-xs text-gray-500 mb-4">Deposit funds directly into a customer account. Earn 1.5% commission.</p>
+                    <p class="text-xs text-gray-500 mb-4">Deposit funds directly into a customer account. No fee / 0% commission.</p>
 
                     <form method="POST" action="{{ route('agent.cash.in') }}">
                         @csrf

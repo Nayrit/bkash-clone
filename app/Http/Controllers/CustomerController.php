@@ -44,22 +44,31 @@ class CustomerController extends Controller
             return back()->withErrors(['phone' => 'You cannot send money to yourself.']);
         }
 
+        $fee = 5.00;
+        $totalRequired = round($amount + $fee, 2);
+
         // 3. Database Transaction with Pessimistic Locking
-        DB::transaction(function () use ($sender, $receiver, $amount) {
+        DB::transaction(function () use ($sender, $receiver, $amount, $fee, $totalRequired) {
             $senderWallet = \App\Models\Wallet::where('user_id', $sender->id)->lockForUpdate()->firstOrFail();
             $receiverWallet = \App\Models\Wallet::where('user_id', $receiver->id)->lockForUpdate()->firstOrFail();
+            $treasuryWallet = \App\Models\Wallet::whereHas('user', fn ($q) => $q->where('role', 'admin'))->lockForUpdate()->first();
 
-            if ($senderWallet->balance < $amount) {
+            if ($senderWallet->balance < $totalRequired) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    'amount' => 'Insufficient balance.'
+                    'amount' => "Insufficient balance. Send Money requires amount + ৳{$fee} fee (Total: ৳{$totalRequired})."
                 ]);
             }
 
-            // Deduct from Sender
-            $senderWallet->decrement('balance', $amount);
+            // Deduct from Sender (Principal + 5 Taka Fee)
+            $senderWallet->decrement('balance', $totalRequired);
 
-            // Add to Receiver
+            // Add Principal to Receiver
             $receiverWallet->increment('balance', $amount);
+
+            // 5 Taka goes directly to Admin Treasury
+            if ($treasuryWallet) {
+                $treasuryWallet->increment('balance', $fee);
+            }
 
             // Create Immutable Ledger Receipt
             Transaction::create([
@@ -68,7 +77,9 @@ class CustomerController extends Controller
                 'sender_id' => $sender->id,
                 'receiver_id' => $receiver->id,
                 'amount' => $amount,
-                'fee' => 0.00
+                'fee' => $fee,
+                'agent_commission' => 0.00,
+                'admin_fee' => $fee
             ]);
         });
 
@@ -114,11 +125,15 @@ class CustomerController extends Controller
             }
 
             // State Mutation
-            // 1. Customer pays Amount + 20/1000 Fee
+            // 1. Customer pays e-money float (Amount + 20/1000 Fee)
             $customerWallet->decrement('balance', $totalRequired);
             
-            // 2. Agent receives Amount + 15/1000 Commission
+            // 2. Agent receives e-money float (Amount + 15/1000 Commission) and returns physical hand cash to Customer
             $agentWallet->increment('balance', $amount + $agentCommission);
+            $deductHandCash = min($amount, $agentWallet->cash_in_hand);
+            if ($deductHandCash > 0) {
+                $agentWallet->decrement('cash_in_hand', $deductHandCash);
+            }
 
             // 3. Admin Treasury receives 5/1000 Platform Revenue
             if ($treasuryWallet) {
