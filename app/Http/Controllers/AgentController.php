@@ -156,8 +156,17 @@ class AgentController extends Controller
             }
 
             $deductCash = min($amount, $agentWallet->cash_in_hand);
+            $remainingPayment = round($amount - $deductCash, 2);
             if ($deductCash > 0) {
                 $agentWallet->decrement('cash_in_hand', $deductCash);
+            }
+            if ($remainingPayment > 0) {
+                if ($agentWallet->balance < $remainingPayment) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'amount' => "Insufficient total funds. You have ৳{$agentWallet->cash_in_hand} physical cash and ৳{$agentWallet->balance} digital float."
+                    ]);
+                }
+                $agentWallet->decrement('balance', $remainingPayment);
             }
 
             Transaction::create([

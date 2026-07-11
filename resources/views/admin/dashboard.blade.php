@@ -140,7 +140,11 @@
                                                     @elseif($txn->type === 'commission') bg-indigo-100 text-indigo-800
                                                     @else bg-gray-100 text-gray-800
                                                     @endif">
-                                                    {{ ucwords(str_replace('_', ' ', $txn->type)) }}
+                                                    @if($txn->type === 'commission')
+                                                        Due Settlement
+                                                    @else
+                                                        {{ ucwords(str_replace('_', ' ', $txn->type)) }}
+                                                    @endif
                                                 </span>
                                             </td>
                                             <td class="px-4 py-3 text-xs">
