@@ -13,9 +13,26 @@
                     <h3 class="text-lg font-medium text-gray-900">{{ $agent->name }}</h3>
                     <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 uppercase tracking-wide">Agent • {{ $agent->phone }}</span>
                 </div>
-                <p class="text-4xl font-bold text-blue-600 mt-2">
-                    ৳ {{ number_format($agent->wallet->balance ?? 0, 2) }}
-                </p>
+                <div class="flex flex-wrap gap-8 mt-3">
+                    <div>
+                        <p class="text-xs text-gray-400 font-semibold uppercase">Digital Float Balance</p>
+                        <p class="text-3xl font-bold text-blue-600 mt-0.5">
+                            ৳ {{ number_format($agent->wallet->balance ?? 0, 2) }}
+                        </p>
+                    </div>
+                    <div class="border-l border-gray-200 pl-6">
+                        <p class="text-xs text-gray-400 font-semibold uppercase">Physical Cash Collected</p>
+                        <p class="text-3xl font-bold text-emerald-600 mt-0.5">
+                            ৳ {{ number_format($agent->wallet->cash_in_hand ?? 0, 2) }}
+                        </p>
+                    </div>
+                    <div class="border-l border-gray-200 pl-6">
+                        <p class="text-xs text-gray-400 font-semibold uppercase">Payable Due to Admin</p>
+                        <p class="text-3xl font-bold text-purple-600 mt-0.5">
+                            ৳ {{ number_format($agent->wallet->admin_due ?? 0, 2) }}
+                        </p>
+                    </div>
+                </div>
             </div>
             <div class="mt-4 md:mt-0 text-right text-xs text-gray-500">
                 <p>Agent ID: #{{ $agent->id }}</p>
@@ -28,96 +45,95 @@
                 <p class="font-medium text-sm text-green-700">{{ session('status') }}</p>
             </div>
         @endif
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- Customer Cash-In (Deposit) -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-t-4 border-green-500">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Customer Cash-In</h3>
-                <p class="text-xs text-gray-500 mb-4">Deposit digital float directly to a Customer account.</p>
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-t-4 border-green-500 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Perform Cash-In</h3>
+                    <p class="text-xs text-gray-500 mb-4">Deposit funds directly into a customer account. Earn 1.5% commission.</p>
 
-                <form method="POST" action="{{ route('agent.cash.in') }}">
-                    @csrf
-                    <div class="mb-4">
-                        <x-input-label for="customer_phone" :value="__('Customer Phone')" />
-                        <x-text-input id="customer_phone" class="block mt-1 w-full" type="text" name="customer_phone" required placeholder="017..." />
-                        <x-input-error :messages="$errors->get('customer_phone')" class="mt-2" />
-                    </div>
+                    <form method="POST" action="{{ route('agent.cash.in') }}">
+                        @csrf
+                        <div class="mb-4">
+                            <x-input-label for="customer_phone" :value="__('Customer Phone')" />
+                            <x-text-input id="customer_phone" class="block mt-1 w-full" type="text" name="customer_phone" required placeholder="018..." />
+                            <x-input-error :messages="$errors->get('customer_phone')" class="mt-2" />
+                        </div>
 
-                    <div class="mb-4">
-                        <x-input-label for="cash_in_amount" :value="__('Amount (BDT)')" />
-                        <x-text-input id="cash_in_amount" class="block mt-1 w-full" type="number" step="0.01" name="amount" min="20" required />
-                        <x-input-error :messages="$errors->get('amount')" class="mt-2" />
-                    </div>
+                        <div class="mb-4">
+                            <x-input-label for="cashin_amount" :value="__('Amount (BDT)')" />
+                            <x-text-input id="cashin_amount" class="block mt-1 w-full" type="number" step="0.01" name="amount" min="10" required />
+                            <x-input-error :messages="$errors->get('amount')" class="mt-2" />
+                        </div>
 
-                    <div class="mt-4">
-                        <x-primary-button class="bg-green-600 hover:bg-green-700 w-full justify-center">
-                            {{ __('Perform Cash-In') }}
-                        </x-primary-button>
-                    </div>
-                </form>
+                        <div class="mt-4">
+                            <x-primary-button class="bg-green-600 hover:bg-green-700 w-full justify-center">
+                                {{ __('Perform Cash-In') }}
+                            </x-primary-button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             <!-- Request Float from Treasury -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-t-4 border-blue-500">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Request Float</h3>
-                <p class="text-xs text-gray-500 mb-4">Request additional float from Admin Treasury.</p>
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-t-4 border-blue-500 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Request Float</h3>
+                    <p class="text-xs text-gray-500 mb-4">Request additional float from Admin Treasury.</p>
 
-                <form method="POST" action="{{ route('agent.request.funds') }}">
-                    @csrf
-                    <div class="mb-4">
-                        <x-input-label for="amount" :value="__('Amount (BDT)')" />
-                        <x-text-input id="amount" class="block mt-1 w-full" type="number" step="0.01" name="amount" min="500" required />
-                        <x-input-error :messages="$errors->get('amount')" class="mt-2" />
-                    </div>
+                    <form method="POST" action="{{ route('agent.request.funds') }}">
+                        @csrf
+                        <div class="mb-4">
+                            <x-input-label for="amount" :value="__('Amount (BDT)')" />
+                            <x-text-input id="amount" class="block mt-1 w-full" type="number" step="0.01" name="amount" min="500" required />
+                            <x-input-error :messages="$errors->get('amount')" class="mt-2" />
+                        </div>
 
-                    <div class="mt-4 pt-16">
-                        <x-primary-button class="bg-blue-600 hover:bg-blue-700 w-full justify-center">
-                            {{ __('Submit Request') }}
-                        </x-primary-button>
-                    </div>
-                </form>
+                        <div class="mt-6 pt-16">
+                            <x-primary-button class="bg-blue-600 hover:bg-blue-700 w-full justify-center">
+                                {{ __('Submit Request') }}
+                            </x-primary-button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
-            <!-- Return Float to Treasury -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-t-4 border-purple-500">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Return Float</h3>
-                <p class="text-xs text-gray-500 mb-4">Return unused digital float back to Treasury.</p>
+            <!-- Unified Step-by-Step Settlement Card -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-t-4 border-indigo-600 flex flex-col justify-between" x-data="{ settleAmount: '' }">
+                <div>
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-medium text-gray-900">Settle Admin Dues</h3>
+                        <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-indigo-100 text-indigo-800">PAY IN STEPS</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-4">Pay Admin Treasury for cash collections. Pay partially or fully.</p>
 
-                <form method="POST" action="{{ route('agent.cash.out') }}">
-                    @csrf
-                    <div class="mb-4">
-                        <x-input-label for="return_amount" :value="__('Amount (BDT)')" />
-                        <x-text-input id="return_amount" class="block mt-1 w-full" type="number" step="0.01" name="amount" min="100" required />
-                        <x-input-error :messages="$errors->get('amount')" class="mt-2" />
+                    <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 mb-4 flex justify-between items-center">
+                        <div>
+                            <p class="text-xs font-semibold text-indigo-700 uppercase">Current Due to Admin</p>
+                            <p class="text-xl font-bold text-indigo-950 mt-0.5">৳ {{ number_format($agent->wallet->admin_due ?? 0, 2) }}</p>
+                        </div>
+                        @if(($agent->wallet->admin_due ?? 0) > 0)
+                            <button type="button" @click="settleAmount = '{{ $agent->wallet->admin_due }}'" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-2.5 py-1.5 rounded-lg transition">
+                                Pay Full Due
+                            </button>
+                        @endif
                     </div>
 
-                    <div class="mt-4 pt-16">
-                        <x-primary-button class="bg-purple-600 hover:bg-purple-700 w-full justify-center">
-                            {{ __('Return Float') }}
-                        </x-primary-button>
-                    </div>
-                </form>
-            </div>
+                    <form method="POST" action="{{ route('agent.remit.admin') }}">
+                        @csrf
+                        <div class="mb-4">
+                            <x-input-label for="remit_amount" :value="__('Amount to Pay Now (BDT)')" />
+                            <x-text-input id="remit_amount" x-model="settleAmount" class="block mt-1 w-full" type="number" step="0.01" name="amount" min="1" required placeholder="Enter partial or full amount" />
+                            <x-input-error :messages="$errors->get('amount')" class="mt-2" />
+                        </div>
 
-            <!-- Remit Cash-In Collections to Admin -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-t-4 border-indigo-500">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Remit to Admin</h3>
-                <p class="text-xs text-gray-500 mb-4">Settle cash collection with Admin. Keep 1.5% commission.</p>
-
-                <form method="POST" action="{{ route('agent.remit.admin') }}">
-                    @csrf
-                    <div class="mb-4">
-                        <x-input-label for="remit_amount" :value="__('Amount (BDT)')" />
-                        <x-text-input id="remit_amount" class="block mt-1 w-full" type="number" step="0.01" name="amount" min="1" required placeholder="e.g. 5000" />
-                        <x-input-error :messages="$errors->get('amount')" class="mt-2" />
-                    </div>
-
-                    <div class="mt-4 pt-16">
-                        <x-primary-button class="bg-indigo-600 hover:bg-indigo-700 w-full justify-center">
-                            {{ __('Remit & Keep Commission') }}
-                        </x-primary-button>
-                    </div>
-                </form>
+                        <div class="mt-4">
+                            <x-primary-button class="bg-indigo-600 hover:bg-indigo-700 w-full justify-center">
+                                {{ __('Settle Payment with Admin') }}
+                            </x-primary-button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
 

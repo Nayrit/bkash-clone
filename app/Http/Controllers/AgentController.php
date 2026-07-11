@@ -70,9 +70,14 @@ class AgentController extends Controller
             $agentWallet = Wallet::where('user_id', $agent->id)->lockForUpdate()->firstOrFail();
             $customerWallet = Wallet::where('user_id', $customer->id)->lockForUpdate()->firstOrFail();
 
-            // Customer gets deposit amount; Agent gets cash amount + commission
+            // Customer gets deposit amount; Agent earns commission & tracks collected physical cash + dues to Admin
+            $adminShare = round($amount - $commission, 2);
             $customerWallet->increment('balance', $amount);
-            $agentWallet->increment('balance', $amount + $commission);
+            $agentWallet->increment('cash_in_hand', $amount);
+            $agentWallet->increment('admin_due', $adminShare);
+            if ($commission > 0) {
+                $agentWallet->increment('balance', $commission);
+            }
 
             // Single Ledger Entry containing complete information
             Transaction::create([
@@ -128,7 +133,7 @@ class AgentController extends Controller
         return back()->with('status', "Float withdrawal of ৳{$amount} returned to Admin Treasury!");
     }
 
-    // 5. Remit Cash-In Collections to Admin Treasury (Agent keeps commission, Admin gets remaining share)
+    // 5. Settle Dues with Admin Treasury step-by-step (Partial or Full Payment)
     public function remitToAdmin(Request $request)
     {
         $request->validate([
@@ -137,18 +142,22 @@ class AgentController extends Controller
 
         $agent = Auth::user();
         $amount = round((float) $request->amount, 2);
-        $commissionRate = (float) \App\Models\SystemSetting::getVal('cash_in_commission_percentage', 1.50);
-        $commission = round($amount * ($commissionRate / 100), 2);
-        $adminShare = round($amount - $commission, 2);
 
-        DB::transaction(function () use ($agent, $amount, $commission, $adminShare) {
+        DB::transaction(function () use ($agent, $amount) {
             $agentWallet = Wallet::where('user_id', $agent->id)->lockForUpdate()->firstOrFail();
             $treasuryWallet = Wallet::whereHas('user', fn ($q) => $q->where('role', 'admin'))->lockForUpdate()->firstOrFail();
 
-            // Admin Treasury receives the net collection share; Agent receives their earned commission
-            $treasuryWallet->increment('balance', $adminShare);
-            if ($commission > 0) {
-                $agentWallet->increment('balance', $commission);
+            // Transfer exact payment amount step-by-step to Admin Treasury
+            $treasuryWallet->increment('balance', $amount);
+
+            $deductDue = min($amount, $agentWallet->admin_due);
+            if ($deductDue > 0) {
+                $agentWallet->decrement('admin_due', $deductDue);
+            }
+
+            $deductCash = min($amount, $agentWallet->cash_in_hand);
+            if ($deductCash > 0) {
+                $agentWallet->decrement('cash_in_hand', $deductCash);
             }
 
             Transaction::create([
@@ -158,11 +167,11 @@ class AgentController extends Controller
                 'receiver_id' => $treasuryWallet->user_id,
                 'amount' => $amount,
                 'fee' => 0.00,
-                'agent_commission' => $commission,
-                'admin_fee' => $adminShare
+                'agent_commission' => 0.00,
+                'admin_fee' => $amount
             ]);
         });
 
-        return back()->with('status', "Collection of ৳{$amount} settled! Admin Treasury received ৳{$adminShare} and you kept ৳{$commission} commission.");
+        return back()->with('status', "Settlement payment of ৳{$amount} sent to Admin Treasury! Remaining Due updated.");
     }
 }

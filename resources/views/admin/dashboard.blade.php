@@ -25,20 +25,30 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-lg shadow border border-gray-100">
-                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Users</h4>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $totalUsers }}</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                <div class="bg-white p-5 rounded-lg shadow border border-gray-100">
+                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Users</h4>
+                    <p class="text-2xl font-bold text-gray-900 mt-1">{{ $totalUsers }}</p>
                 </div>
                 
-                <div class="bg-white p-6 rounded-lg shadow border border-gray-100">
-                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total System Float</h4>
-                    <p class="text-3xl font-bold text-green-600 mt-2">৳ {{ number_format($totalSystemBalance, 2) }}</p>
+                <div class="bg-white p-5 rounded-lg shadow border border-gray-100">
+                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Digital Float</h4>
+                    <p class="text-2xl font-bold text-green-600 mt-1">৳ {{ number_format($totalSystemBalance, 2) }}</p>
                 </div>
 
-                <div class="bg-white p-6 rounded-lg shadow border border-gray-100">
-                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Transactions</h4>
-                    <p class="text-3xl font-bold text-blue-600 mt-2">{{ $totalTransactions }}</p>
+                <div class="bg-white p-5 rounded-lg shadow border border-gray-100">
+                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Agent Cash In Hand</h4>
+                    <p class="text-2xl font-bold text-emerald-600 mt-1">৳ {{ number_format($totalAgentCashInHand ?? 0, 2) }}</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-lg shadow border border-gray-100">
+                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Agent Dues Payable</h4>
+                    <p class="text-2xl font-bold text-purple-600 mt-1">৳ {{ number_format($totalAdminDue ?? 0, 2) }}</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-lg shadow border border-gray-100">
+                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Transactions</h4>
+                    <p class="text-2xl font-bold text-blue-600 mt-1">{{ $totalTransactions }}</p>
                 </div>
             </div>
 
@@ -143,30 +153,6 @@
                                             </td>
                                             <td class="px-4 py-3 text-right font-medium">৳ {{ number_format($txn->amount, 2) }}</td>
                                             <td class="px-4 py-3 text-right text-xs text-gray-500">৳ {{ number_format($txn->fee ?? 0, 2) }}</td>
-                                        </tr>
-                                                    <div>
-                                                        <p class="font-semibold text-gray-500 uppercase">Sender Details</p>
-                                                        <p class="mt-0.5">{{ $txn->sender->name ?? 'System' }} ({{ $txn->sender->phone ?? 'N/A' }})</p>
-                                                    </div>
-                                                    <div>
-                                                        <p class="font-semibold text-gray-500 uppercase">Receiver Details</p>
-                                                        <p class="mt-0.5">{{ $txn->receiver->name ?? 'System' }} ({{ $txn->receiver->phone ?? 'N/A' }})</p>
-                                                    </div>
-                                                    <div>
-                                                        <p class="font-semibold text-gray-500 uppercase">Treasury Audit Breakdown</p>
-                                                        <p class="mt-0.5">Principal: ৳{{ number_format($txn->amount, 2) }}</p>
-                                                        @if($txn->fee > 0)
-                                                            <p class="text-gray-600">Total Customer Fee: ৳{{ number_format($txn->fee, 2) }}</p>
-                                                        @endif
-                                                        @if($txn->agent_commission > 0)
-                                                            <p class="text-purple-700 font-medium">Agent Commission: ৳{{ number_format($txn->agent_commission, 2) }}</p>
-                                                        @endif
-                                                        @if($txn->admin_fee > 0)
-                                                            <p class="text-green-700 font-bold">Admin Revenue: ৳{{ number_format($txn->admin_fee, 2) }}</p>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>

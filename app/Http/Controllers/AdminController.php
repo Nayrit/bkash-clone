@@ -20,10 +20,12 @@ class AdminController extends Controller
 
         $totalUsers = User::count();
         $totalSystemBalance = Wallet::sum('balance');
+        $totalAgentCashInHand = Wallet::sum('cash_in_hand');
+        $totalAdminDue = Wallet::sum('admin_due');
         $totalTransactions = Transaction::count();
         $recentTransactions = Transaction::with(['sender', 'receiver'])->latest()->limit(50)->get();
 
-        return view('admin.dashboard', compact('admin', 'pendingRequests', 'totalUsers', 'totalSystemBalance', 'totalTransactions', 'recentTransactions'));
+        return view('admin.dashboard', compact('admin', 'pendingRequests', 'totalUsers', 'totalSystemBalance', 'totalAgentCashInHand', 'totalAdminDue', 'totalTransactions', 'recentTransactions'));
     }
 
     // Logic: Approves the Agent's funding request
