@@ -33,7 +33,7 @@
             <!-- Send Money Card -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-t-4 border-pink-500">
                 <h3 class="text-lg font-medium text-gray-900 mb-1">Send Money (P2P)</h3>
-                <p class="text-xs text-gray-500 mb-4">Fee: Flat ৳ 5.00 per transfer (goes directly to Admin)</p>
+                <p class="text-xs text-gray-500 mb-4">Fee: Flat ৳ {{ number_format(\App\Models\SystemSetting::getVal('send_money_fee_flat', 5.00), 2) }} per transfer (goes directly to Admin)</p>
 
                 <form method="POST" action="{{ route('customer.send.money') }}">
                     @csrf
@@ -60,7 +60,8 @@
             <!-- Cash Out Card -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-t-4 border-purple-500">
                 <h3 class="text-lg font-medium text-gray-900 mb-1">Cash Out to Agent</h3>
-                <p class="text-xs text-gray-500 mb-4">Fee: {{ \App\Models\SystemSetting::getVal('cash_out_fee_percentage', 2.00) }}% (৳20 per ৳1,000)</p>
+                @php $cashOutFeeRate = (float) \App\Models\SystemSetting::getVal('cash_out_fee_percentage', 2.00); @endphp
+                <p class="text-xs text-gray-500 mb-4">Fee: {{ $cashOutFeeRate }}% (৳{{ number_format($cashOutFeeRate * 10, 2) }} per ৳1,000)</p>
 
                 <form method="POST" action="{{ route('customer.cash.out') }}">
                     @csrf

@@ -35,6 +35,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
     Route::get('/admin/transactions', [AdminController::class, 'transactions'])->name('admin.transactions');
     Route::post('/admin/fund-request/{id}/approve', [AdminController::class, 'approveRequest'])->name('admin.request.approve');
+    Route::post('/admin/settings/update', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
 });
 
 

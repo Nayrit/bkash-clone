@@ -93,6 +93,58 @@
                 </div>
             </div>
 
+            <!-- DYNAMIC FEE & COMMISSION MANAGEMENT CARD -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border-t-4 border-indigo-600">
+                <div class="p-6 text-gray-900">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900">Platform Fee & Commission Structure</h3>
+                            <p class="text-xs text-gray-500">Configure real-time transaction fees and agent commissions across the ecosystem. Changes apply instantly.</p>
+                        </div>
+                        <span class="mt-2 sm:mt-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            Dynamic System Settings
+                        </span>
+                    </div>
+
+                    <form method="POST" action="{{ route('admin.settings.update') }}">
+                        @csrf
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <x-input-label for="send_money_fee_flat" :value="__('Send Money Flat Fee (BDT)')" />
+                                <x-text-input id="send_money_fee_flat" class="block mt-1 w-full" type="number" step="0.01" min="0" name="send_money_fee_flat" :value="$sendMoneyFeeFlat ?? '5.00'" required />
+                                <p class="text-xs text-gray-400 mt-1">Charged on P2P transfers (100% Admin revenue).</p>
+                                <x-input-error :messages="$errors->get('send_money_fee_flat')" class="mt-2" />
+                            </div>
+
+                            <div>
+                                <x-input-label for="cash_out_fee_percentage" :value="__('Cash-Out Total Fee Rate (%)')" />
+                                <x-text-input id="cash_out_fee_percentage" class="block mt-1 w-full" type="number" step="0.01" min="0" max="100" name="cash_out_fee_percentage" :value="$cashOutFeePercent ?? '2.00'" required />
+                                <p class="text-xs text-gray-400 mt-1">Total fee charged to customer on withdrawal.</p>
+                                <x-input-error :messages="$errors->get('cash_out_fee_percentage')" class="mt-2" />
+                            </div>
+
+                            <div>
+                                <x-input-label for="agent_commission_percentage" :value="__('Agent Cash-Out Commission (%)')" />
+                                <x-text-input id="agent_commission_percentage" class="block mt-1 w-full" type="number" step="0.01" min="0" max="100" name="agent_commission_percentage" :value="$agentCommissionPercent ?? '1.50'" required />
+                                <p class="text-xs text-gray-400 mt-1">Agent earnings out of the Cash-Out fee.</p>
+                                <x-input-error :messages="$errors->get('agent_commission_percentage')" class="mt-2" />
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex items-center justify-between">
+                            <div class="text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                                <strong>Net Admin Treasury Share on Cash-Out:</strong>
+                                <span class="text-indigo-700 font-bold">{{ number_format(((float)($cashOutFeePercent ?? 2.00) - (float)($agentCommissionPercent ?? 1.50)), 2) }}%</span>
+                                <span class="text-gray-400">(Total Fee % minus Agent Commission %)</span>
+                            </div>
+                            <x-primary-button class="bg-indigo-600 hover:bg-indigo-700">
+                                {{ __('Update Platform Fees') }}
+                            </x-primary-button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Global System Ledger & Audit Table -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg" x-data="{
                 selectedTxn: null,

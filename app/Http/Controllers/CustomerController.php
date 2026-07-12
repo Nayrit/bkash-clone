@@ -44,7 +44,7 @@ class CustomerController extends Controller
             return back()->withErrors(['phone' => 'You cannot send money to yourself.']);
         }
 
-        $fee = 5.00;
+        $fee = round((float) \App\Models\SystemSetting::getVal('send_money_fee_flat', 5.00), 2);
         $totalRequired = round($amount + $fee, 2);
 
         // 3. Database Transaction with Pessimistic Locking
@@ -107,9 +107,9 @@ class CustomerController extends Controller
         $feeRate = (float) \App\Models\SystemSetting::getVal('cash_out_fee_percentage', 2.00);
         $agentCommissionRate = (float) \App\Models\SystemSetting::getVal('agent_commission_percentage', 1.50);
 
-        $fee = round($amount * ($feeRate / 100), 2);                  // 20 Taka per 1,000
-        $agentCommission = round($amount * ($agentCommissionRate / 100), 2); // 15 Taka per 1,000
-        $adminRevenue = round($fee - $agentCommission, 2);            // 5 Taka per 1,000
+        $fee = round($amount * ($feeRate / 100), 2);
+        $agentCommission = round($amount * ($agentCommissionRate / 100), 2);
+        $adminRevenue = round($fee - $agentCommission, 2);
         $totalRequired = round($amount + $fee, 2);
 
         DB::transaction(function () use ($customer, $agent, $amount, $fee, $agentCommission, $adminRevenue, $totalRequired) {

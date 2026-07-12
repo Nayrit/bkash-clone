@@ -7,6 +7,7 @@ use App\Models\AgentFundingRequest;
 use App\Models\Transaction; // Required for the Audit Trail and Approvals
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB; // Required for database transactions
 
@@ -25,7 +26,16 @@ class AdminController extends Controller
         $totalTransactions = Transaction::count();
         $recentTransactions = Transaction::with(['sender', 'receiver'])->latest()->limit(50)->get();
 
-        return view('admin.dashboard', compact('admin', 'pendingRequests', 'totalUsers', 'totalSystemBalance', 'totalAgentCashInHand', 'totalAdminDue', 'totalTransactions', 'recentTransactions'));
+        // Retrieve dynamic system settings for fee & commission management
+        $sendMoneyFeeFlat = SystemSetting::getVal('send_money_fee_flat', '5.00');
+        $cashOutFeePercent = SystemSetting::getVal('cash_out_fee_percentage', '2.00');
+        $agentCommissionPercent = SystemSetting::getVal('agent_commission_percentage', '1.50');
+
+        return view('admin.dashboard', compact(
+            'admin', 'pendingRequests', 'totalUsers', 'totalSystemBalance',
+            'totalAgentCashInHand', 'totalAdminDue', 'totalTransactions',
+            'recentTransactions', 'sendMoneyFeeFlat', 'cashOutFeePercent', 'agentCommissionPercent'
+        ));
     }
 
     // Logic: Approves the Agent's funding request
@@ -70,5 +80,25 @@ class AdminController extends Controller
     {
         $transactions = Transaction::with(['sender', 'receiver'])->latest()->paginate(20);
         return view('admin.transactions', compact('transactions'));
+    }
+
+    // Dynamic Settings: Update Platform Fees and Commissions
+    public function updateSettings(Request $request)
+    {
+        $request->validate([
+            'send_money_fee_flat' => 'required|numeric|min:0',
+            'cash_out_fee_percentage' => 'required|numeric|min:0|max:100',
+            'agent_commission_percentage' => 'required|numeric|min:0|max:100',
+        ]);
+
+        if ((float) $request->agent_commission_percentage > (float) $request->cash_out_fee_percentage) {
+            return back()->withErrors(['agent_commission_percentage' => 'Agent commission percentage cannot exceed the total Cash-Out fee percentage.']);
+        }
+
+        SystemSetting::setVal('send_money_fee_flat', round((float) $request->send_money_fee_flat, 2));
+        SystemSetting::setVal('cash_out_fee_percentage', round((float) $request->cash_out_fee_percentage, 2));
+        SystemSetting::setVal('agent_commission_percentage', round((float) $request->agent_commission_percentage, 2));
+
+        return back()->with('status', 'Platform Fees & Commission structures updated successfully!');
     }
 }
