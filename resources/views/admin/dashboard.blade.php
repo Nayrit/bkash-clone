@@ -147,12 +147,26 @@
 
             <!-- Global System Ledger & Audit Table -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg" x-data="{
+                searchQuery: '',
                 selectedTxn: null,
                 openModal(txn) { this.selectedTxn = txn; },
-                closeModal() { this.selectedTxn = null; }
+                closeModal() { this.selectedTxn = null; },
+                matchSearch(text) {
+                    if (!this.searchQuery) return true;
+                    return text.toLowerCase().includes(this.searchQuery.toLowerCase());
+                }
             }">
                 <div class="p-6 text-gray-900">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Global System Ledger & Audit Log</h3>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                        <h3 class="text-lg font-medium text-gray-900">Global System Ledger & Audit Log</h3>
+                        <div class="relative w-full sm:w-80">
+                            <input type="text" 
+                                   x-model="searchQuery" 
+                                   placeholder="Search ledger by TXN ID, phone, name..." 
+                                   class="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <svg class="w-4 h-4 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+                    </div>
                     @if($recentTransactions->isEmpty())
                         <p class="text-gray-500 italic text-sm">No transactions recorded across the system yet.</p>
                     @else
@@ -171,7 +185,8 @@
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach($recentTransactions as $txn)
-                                        <tr @click="openModal({
+                                        <tr x-show="matchSearch('{{ $txn->txn_id }} {{ $txn->type }} {{ $txn->sender->name ?? '' }} {{ $txn->sender->phone ?? '' }} {{ $txn->receiver->name ?? '' }} {{ $txn->receiver->phone ?? '' }} {{ $txn->amount }}')"
+                                            @click="openModal({
                                             id: '{{ $txn->txn_id }}',
                                             date: '{{ $txn->created_at->format('d M Y, h:i:s A') }}',
                                             type: '{{ ucwords(str_replace('_', ' ', $txn->type)) }}',

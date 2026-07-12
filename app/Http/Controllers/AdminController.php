@@ -75,10 +75,38 @@ class AdminController extends Controller
         return back()->with('status', 'Request Approved! Float has been transferred to the Agent.');
     }
 
-    // Audit Trail: Shows all transactions
-    public function transactions()
+    // Audit Trail: Shows all transactions with search and date filter capabilities
+    public function transactions(Request $request)
     {
-        $transactions = Transaction::with(['sender', 'receiver'])->latest()->paginate(20);
+        $query = Transaction::with(['sender', 'receiver']);
+
+        if ($request->filled('q')) {
+            $search = trim($request->q);
+            $query->where(function ($q) use ($search) {
+                $q->where('txn_id', 'like', "%{$search}%")
+                  ->orWhere('type', 'like', "%{$search}%")
+                  ->orWhere('amount', 'like', "%{$search}%")
+                  ->orWhere('created_at', 'like', "%{$search}%")
+                  ->orWhereHas('sender', function ($sq) use ($search) {
+                      $sq->where('name', 'like', "%{$search}%")
+                         ->orWhere('phone', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('receiver', function ($rq) use ($search) {
+                      $rq->where('name', 'like', "%{$search}%")
+                         ->orWhere('phone', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        $transactions = $query->latest()->paginate(25)->withQueryString();
         return view('admin.transactions', compact('transactions'));
     }
 
