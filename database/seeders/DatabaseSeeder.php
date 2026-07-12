@@ -21,46 +21,57 @@ class DatabaseSeeder extends Seeder
         SystemSetting::setVal('agent_commission_percentage', '1.50'); // 1.5% Agent Share (15 Tk per 1000)
         SystemSetting::setVal('admin_fee_percentage', '0.50');        // 0.5% Admin Share (5 Tk per 1000)
 
-        // 2. Create System Administrator
+        // 2. Create Admin Account (admin@gmail.com) -> 100,000 float
         $admin = User::create([
             'name' => 'System Administrator',
             'phone' => '01700000000',
-            'email' => 'admin@bkash.test',
-            'password' => Hash::make('password'),
+            'email' => 'admin@gmail.com',
+            'password' => Hash::make('Haha@1234'),
             'role' => 'admin',
         ]);
-        Wallet::create([
-            'user_id' => $admin->id,
-            'balance' => 100000.00, // Initial System Float: 100,000 BDT
+        $admin->wallet()->update([
+            'balance' => 100000.00,
             'cash_in_hand' => 0.00,
             'admin_due' => 0.00,
         ]);
 
-        // 3. Create Default Test Agent
+        // 3. Create Agent Account (agent@gmail.com)
         $agent = User::create([
             'name' => 'Rahim Agent',
             'phone' => '01711111111',
-            'email' => 'agent@bkash.test',
-            'password' => Hash::make('password'),
+            'email' => 'agent@gmail.com',
+            'password' => Hash::make('Haha@1234'),
             'role' => 'agent',
         ]);
-        Wallet::create([
-            'user_id' => $agent->id,
+        $agent->wallet()->update([
             'balance' => 0.00,
             'cash_in_hand' => 0.00,
             'admin_due' => 0.00,
         ]);
 
-        // 4. Create Default Test Customer
+        // 4. Create Customer Account (customer@gmail.com)
         $customer = User::create([
             'name' => 'Karim Customer',
             'phone' => '01722222222',
-            'email' => 'customer@bkash.test',
-            'password' => Hash::make('password'),
+            'email' => 'customer@gmail.com',
+            'password' => Hash::make('Haha@1234'),
             'role' => 'customer',
         ]);
-        Wallet::create([
-            'user_id' => $customer->id,
+        $customer->wallet()->update([
+            'balance' => 0.00,
+            'cash_in_hand' => 0.00,
+            'admin_due' => 0.00,
+        ]);
+
+        // 5. Create Second Customer Account (itty@gmail.com)
+        $itty = User::create([
+            'name' => 'Itty',
+            'phone' => '01733333333',
+            'email' => 'itty@gmail.com',
+            'password' => Hash::make('Haha@1234'),
+            'role' => 'customer',
+        ]);
+        $itty->wallet()->update([
             'balance' => 0.00,
             'cash_in_hand' => 0.00,
             'admin_due' => 0.00,

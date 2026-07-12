@@ -104,7 +104,7 @@ class AgentController extends Controller
     public function cashOut(Request $request)
     {
         $request->validate([
-            'amount' => 'required|numeric|min:500',
+            'amount' => 'required|numeric|min:100',
         ]);
 
         $agent = Auth::user();
@@ -116,13 +116,18 @@ class AgentController extends Controller
 
             if ($agentWallet->balance < $amount) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    'amount' => 'Insufficient float balance to return to Treasury.'
+                    'amount' => 'Insufficient digital float balance to return to Treasury.'
                 ]);
             }
 
-            // State Mutation
+            // State Mutation: Agent returns digital float to Admin Treasury
             $agentWallet->decrement('balance', $amount);
             $treasuryWallet->increment('balance', $amount);
+
+            // Returning float back to Treasury reduces Agent's Payable Due to Admin
+            if ($agentWallet->admin_due > 0) {
+                $agentWallet->decrement('admin_due', min($amount, $agentWallet->admin_due));
+            }
 
             // Ledger Entry
             Transaction::create([
@@ -135,10 +140,10 @@ class AgentController extends Controller
             ]);
         });
 
-        return back()->with('status', "Float withdrawal of ৳{$amount} returned to Admin Treasury!");
+        return back()->with('status', "Float withdrawal of ৳{$amount} returned to Admin Treasury! Payable Due updated.");
     }
 
-    // 5. Settle Dues with Admin Treasury step-by-step (Partial or Full Payment)
+    // 5. Settle Dues with Admin Treasury step-by-step (Physical Cash Settlement)
     public function remitToAdmin(Request $request)
     {
         $request->validate([
@@ -152,27 +157,15 @@ class AgentController extends Controller
             $agentWallet = Wallet::where('user_id', $agent->id)->lockForUpdate()->firstOrFail();
             $treasuryWallet = Wallet::whereHas('user', fn ($q) => $q->where('role', 'admin'))->lockForUpdate()->firstOrFail();
 
-            // Transfer exact payment amount step-by-step to Admin Treasury
-            $treasuryWallet->increment('balance', $amount);
-
-            $deductDue = min($amount, $agentWallet->admin_due);
-            if ($deductDue > 0) {
-                $agentWallet->decrement('admin_due', $deductDue);
+            if ($agentWallet->admin_due <= 0) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'amount' => 'You currently have no outstanding Payable Due to Admin Treasury.'
+                ]);
             }
 
-            $deductCash = min($amount, $agentWallet->cash_in_hand);
-            $remainingPayment = round($amount - $deductCash, 2);
-            if ($deductCash > 0) {
-                $agentWallet->decrement('cash_in_hand', $deductCash);
-            }
-            if ($remainingPayment > 0) {
-                if ($agentWallet->balance < $remainingPayment) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'amount' => "Insufficient total funds. You have ৳{$agentWallet->cash_in_hand} physical cash and ৳{$agentWallet->balance} digital float."
-                    ]);
-                }
-                $agentWallet->decrement('balance', $remainingPayment);
-            }
+            // State Mutation: Agent hands physical cash over to Admin Treasury to settle Admin Due
+            $agentWallet->decrement('admin_due', min($amount, $agentWallet->admin_due));
+            $agentWallet->decrement('cash_in_hand', $amount);
 
             Transaction::create([
                 'txn_id' => uniqid('TXN_'),
@@ -186,6 +179,6 @@ class AgentController extends Controller
             ]);
         });
 
-        return back()->with('status', "Settlement payment of ৳{$amount} sent to Admin Treasury! Remaining Due updated.");
+        return back()->with('status', "Physical cash settlement of ৳{$amount} paid to Admin Treasury! Payable Due updated.");
     }
 }
