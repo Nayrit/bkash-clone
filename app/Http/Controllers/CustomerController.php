@@ -130,10 +130,7 @@ class CustomerController extends Controller
             
             // 2. Agent receives e-money float (Amount + 15/1000 Commission) and returns physical hand cash to Customer
             $agentWallet->increment('balance', $amount + $agentCommission);
-            $deductHandCash = min($amount, $agentWallet->cash_in_hand);
-            if ($deductHandCash > 0) {
-                $agentWallet->decrement('cash_in_hand', $deductHandCash);
-            }
+            $agentWallet->decrement('cash_in_hand', $amount);
 
             // 3. Admin Treasury receives 5/1000 Platform Revenue
             if ($treasuryWallet) {

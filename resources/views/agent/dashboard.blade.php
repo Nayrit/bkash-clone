@@ -32,6 +32,12 @@
                             ৳ {{ number_format($agent->wallet->admin_due ?? 0, 2) }}
                         </p>
                     </div>
+                    <div class="border-l border-gray-200 pl-6">
+                        <p class="text-xs text-gray-400 font-semibold uppercase">Total Commission Earned</p>
+                        <p class="text-3xl font-bold text-amber-600 mt-0.5">
+                            ৳ {{ number_format($totalCommissionEarned ?? 0, 2) }}
+                        </p>
+                    </div>
                 </div>
             </div>
             <div class="mt-4 md:mt-0 text-right text-xs text-gray-500">

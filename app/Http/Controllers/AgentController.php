@@ -21,14 +21,19 @@ class AgentController extends Controller
             ->latest()
             ->get();
 
+        $totalCommissionEarned = Transaction::where('receiver_id', $agent->id)
+            ->sum('agent_commission');
+
         $transactions = Transaction::with(['sender', 'receiver'])
-            ->where('sender_id', $agent->id)
-            ->orWhere('receiver_id', $agent->id)
+            ->where(function ($q) use ($agent) {
+                $q->where('sender_id', $agent->id)
+                  ->orWhere('receiver_id', $agent->id);
+            })
             ->latest()
             ->limit(25)
             ->get();
 
-        return view('agent.dashboard', compact('agent', 'fundingRequests', 'transactions'));
+        return view('agent.dashboard', compact('agent', 'fundingRequests', 'transactions', 'totalCommissionEarned'));
     }
 
     // 2. Process Float Request from Treasury
